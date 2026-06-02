@@ -5,7 +5,7 @@ on:
 
 jobs:
   build-project:
-    runs-on: macos-13 # Menggunakan macOS 13 yang versi Xcode-nya lebih bersahabat dengan proyek lama
+    runs-on: macos-latest # Menggunakan macOS 13 yang versi Xcode-nya lebih bersahabat dengan proyek lama
 
     steps:
     - name: Ambil Source Code
