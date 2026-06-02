@@ -1,15 +1,7 @@
-*(Pastikan tanda titik di depan folder `.github` tidak terlewat).*
-
----
-
-### 3. Tempel Kode Otomatisasi
-Salin (copy) seluruh kode di bawah ini, lalu tempelkan (paste) ke dalam kotak teks pengisian kode yang besar di halaman GitHub kamu:
-
-```yaml
 name: Build DNSCloak IPA
 
 on:
-  workflow_dispatch: # Membuat tombol manual untuk menjalankan build
+  workflow_dispatch:
 
 jobs:
   build-project:
