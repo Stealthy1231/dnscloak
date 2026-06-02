@@ -19,17 +19,19 @@ jobs:
       with:
         node-version: '16'
 
-    - name: Setup Golang (Dinaikkan ke 1.23 agar Kompatibel)
+    - name: Setup Golang (Dinaikkan ke 1.23)
       uses: actions/setup-go@v5
       with:
         go-version: '1.23'
 
-    - name: Install & Init Gomobile (Wajib untuk Build Core Go ke iOS)
+    - name: Install & Init Gomobile + Buka Izin Folder
       run: |
         go install golang.org/x/mobile/cmd/gomobile@latest
         echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
         export PATH=$PATH:$(go env GOPATH)/bin
         gomobile init
+        # Membuka paksa izin folder cache Go agar tidak terjadi "Permission denied"
+        chmod -R +w ${{ github.workspace }} || true
 
     - name: Ganti node-sass ke sass (Modern & Tanpa Python)
       run: |
@@ -50,6 +52,8 @@ jobs:
     - name: Build Framework & Persiapan Folder Cordova
       run: |
         npm run build --if-present
+        # Buka izin folder sekali lagi setelah build framework selesai
+        chmod -R +w ${{ github.workspace }} || true
 
     - name: Kompilasi Proyek Xcode (Tanpa Perintah Clean)
       run: |
