@@ -3,7 +3,6 @@ name: Build DNSCloak IPA
 on:
   workflow_dispatch:
 
-# Menambahkan perintah global untuk memaksa penggunaan Node 24 di server GitHub
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -15,7 +14,7 @@ jobs:
     - name: Ambil Source Code
       uses: actions/checkout@v4
 
-    - name: Setup Node.js (Versi Aman untuk Cordova)
+    - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '16'
@@ -24,6 +23,13 @@ jobs:
       uses: actions/setup-go@v5
       with:
         go-version: '1.18'
+
+    - name: Install & Init Gomobile (Wajib untuk Build Core Go ke iOS)
+      run: |
+        go install golang.org/x/mobile/cmd/gomobile@latest
+        echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+        export PATH=$PATH:$(go env GOPATH)/bin
+        gomobile init
 
     - name: Ganti node-sass ke sass (Modern & Tanpa Python)
       run: |
@@ -45,8 +51,9 @@ jobs:
       run: |
         npm run build --if-present
 
-    - name: Kompilasi Proyek Xcode (Unsigned)
+    - name: Kompilasi Proyek Xcode (Tanpa Perintah Clean)
       run: |
+        # Menghapus perintah 'clean' untuk menghindari bentrok folder di Xcode 16
         xcodebuild -workspace platforms/ios/DNSCryptApp.xcworkspace \
                    -scheme DNSCryptApp \
                    -configuration Release \
@@ -54,7 +61,7 @@ jobs:
                    CODE_SIGNING_ALLOWED=NO \
                    CODE_SIGNING_REQUIRED=NO \
                    CONFIGURATION_BUILD_DIR=${{ github.workspace }}/build \
-                   clean build
+                   build
 
     - name: Bungkus Menjadi File IPA
       run: |
