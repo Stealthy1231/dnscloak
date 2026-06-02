@@ -5,26 +5,35 @@ on:
 
 jobs:
   build-project:
-    runs-on: macos-latest
+    runs-on: macos-13 # Menggunakan macOS 13 yang versi Xcode-nya lebih bersahabat dengan proyek lama
 
     steps:
     - name: Ambil Source Code
       uses: actions/checkout@v4
 
-    - name: Setup Node.js
+    - name: Setup Node.js (Versi Aman untuk Cordova Lama)
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: '16'
 
-    - name: Install Dependensi Jaringan (Cordova/Go)
+    - name: Setup Golang (Wajib untuk kompilasi Core TLS)
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.18'
+
+    - name: Install Dependensi npm
       run: |
         npm install
-        npm run build || true
+        npm install --only=dev
+
+    - name: Build Framework & Persiapan Folder Cordova
+      run: |
+        npm run build
 
     - name: Kompilasi Proyek Xcode (Unsigned)
       run: |
-        xcodebuild -project DNSCloak.xcodeproj \
-                   -scheme DNSCloak \
+        xcodebuild -workspace platforms/ios/DNSCryptApp.xcworkspace \
+                   -scheme DNSCryptApp \
                    -configuration Release \
                    -sdk iphoneos \
                    CODE_SIGNING_ALLOWED=NO \
@@ -35,7 +44,7 @@ jobs:
     - name: Bungkus Menjadi File IPA
       run: |
         mkdir -p Payload
-        cp -r ${{ github.workspace }}/build/DNSCloak.app Payload/
+        cp -r ${{ github.workspace }}/build/DNSCryptApp.app Payload/
         zip -r DNSCloak.ipa Payload
 
     - name: Upload Hasil Jadi .IPA
