@@ -1,0 +1,53 @@
+*(Pastikan tanda titik di depan folder `.github` tidak terlewat).*
+
+---
+
+### 3. Tempel Kode Otomatisasi
+Salin (copy) seluruh kode di bawah ini, lalu tempelkan (paste) ke dalam kotak teks pengisian kode yang besar di halaman GitHub kamu:
+
+```yaml
+name: Build DNSCloak IPA
+
+on:
+  workflow_dispatch: # Membuat tombol manual untuk menjalankan build
+
+jobs:
+  build-project:
+    runs-on: macos-latest
+
+    steps:
+    - name: Ambil Source Code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install Dependensi Jaringan (Cordova/Go)
+      run: |
+        npm install
+        npm run build || true
+
+    - name: Kompilasi Proyek Xcode (Unsigned)
+      run: |
+        xcodebuild -project DNSCloak.xcodeproj \
+                   -scheme DNSCloak \
+                   -configuration Release \
+                   -sdk iphoneos \
+                   CODE_SIGNING_ALLOWED=NO \
+                   CODE_SIGNING_REQUIRED=NO \
+                   CONFIGURATION_BUILD_DIR=${{ github.workspace }}/build \
+                   clean build
+
+    - name: Bungkus Menjadi File IPA
+      run: |
+        mkdir -p Payload
+        cp -r ${{ github.workspace }}/build/DNSCloak.app Payload/
+        zip -r DNSCloak.ipa Payload
+
+    - name: Upload Hasil Jadi .IPA
+      uses: actions/upload-artifact@v4
+      with:
+        name: DNSCloak-Free-Version
+        path: DNSCloak.ipa
