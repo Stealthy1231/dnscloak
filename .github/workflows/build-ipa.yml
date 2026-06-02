@@ -3,32 +3,47 @@ name: Build DNSCloak IPA
 on:
   workflow_dispatch:
 
+# Menambahkan perintah global untuk memaksa penggunaan Node 24 di server GitHub
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build-project:
-    runs-on: macos-latest # Menggunakan macOS 13 yang versi Xcode-nya lebih bersahabat dengan proyek lama
+    runs-on: macos-latest
 
     steps:
     - name: Ambil Source Code
       uses: actions/checkout@v4
 
-    - name: Setup Node.js (Versi Aman untuk Cordova Lama)
+    - name: Setup Node.js (Versi Aman untuk Cordova)
       uses: actions/setup-node@v4
       with:
         node-version: '16'
 
-    - name: Setup Golang (Wajib untuk kompilasi Core TLS)
+    - name: Setup Golang
       uses: actions/setup-go@v5
       with:
         go-version: '1.18'
 
+    - name: Ganti node-sass ke sass (Modern & Tanpa Python)
+      run: |
+        node -e "
+        const fs = require('fs');
+        const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+        if (pkg.dependencies && pkg.dependencies['node-sass']) delete pkg.dependencies['node-sass'];
+        if (pkg.devDependencies && pkg.devDependencies['node-sass']) delete pkg.devDependencies['node-sass'];
+        if (!pkg.devDependencies) pkg.devDependencies = {};
+        pkg.devDependencies['sass'] = '^1.60.0';
+        fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+        "
+
     - name: Install Dependensi npm
       run: |
-        npm install
-        npm install --only=dev
+        npm install --legacy-peer-deps --unsafe-perm
 
     - name: Build Framework & Persiapan Folder Cordova
       run: |
-        npm run build
+        npm run build --if-present
 
     - name: Kompilasi Proyek Xcode (Unsigned)
       run: |
@@ -44,7 +59,7 @@ jobs:
     - name: Bungkus Menjadi File IPA
       run: |
         mkdir -p Payload
-        cp -r ${{ github.workspace }}/build/DNSCryptApp.app Payload/
+        cp -r ${{ github.workspace }}/build/DNSCryptApp.app Payload/ || cp -r build/DNSCryptApp.app Payload/
         zip -r DNSCloak.ipa Payload
 
     - name: Upload Hasil Jadi .IPA
